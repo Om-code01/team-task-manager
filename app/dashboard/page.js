@@ -10,6 +10,9 @@ export default function Dashboard() {
   const [description, setDescription] = useState('')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -90,6 +93,36 @@ export default function Dashboard() {
     }
   }
 
+  const startEdit = (task) => {
+    setEditingId(task.id)
+    setEditTitle(task.title)
+    setEditDescription(task.description || '')
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditTitle('')
+    setEditDescription('')
+  }
+
+  const saveEdit = async (id) => {
+    if (!editTitle.trim()) return
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ title: editTitle, description: editDescription })
+      .eq('id', id)
+
+    if (error) {
+      console.error('Supabase error:', error?.message || error)
+    } else {
+      setEditingId(null)
+      setEditTitle('')
+      setEditDescription('')
+      fetchTasks(user.id)
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
@@ -160,34 +193,83 @@ export default function Dashboard() {
                   key={task.id}
                   className="border rounded-lg p-4 hover:shadow-md transition"
                 >
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-gray-800">
-                        {task.title}
-                      </h3>
-                      {task.description && (
-                        <p className="text-gray-600 mt-1">{task.description}</p>
-                      )}
+                  {editingId === task.id ? (
+                    // Edit Mode
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-gray-700 mb-1 text-sm">Title</label>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 mb-1 text-sm">Description</label>
+                        <textarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows="2"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => saveEdit(task.id)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEdit}
+                          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                    <button
-                      onClick={() => deleteTask(task.id)}
-                      className="ml-4 px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <label className="text-gray-700 font-medium">Status:</label>
-                    <select
-                      value={task.status}
-                      onChange={(e) => updateStatus(task.id, e.target.value)}
-                      className="px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Todo">Todo</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Done">Done</option>
-                    </select>
-                  </div>
+                  ) : (
+                    // View Mode
+                    <>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold text-gray-800">
+                            {task.title}
+                          </h3>
+                          {task.description && (
+                            <p className="text-gray-600 mt-1">{task.description}</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <button
+                            onClick={() => startEdit(task)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteTask(task.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="text-gray-700 font-medium">Status:</label>
+                        <select
+                          value={task.status}
+                          onChange={(e) => updateStatus(task.id, e.target.value)}
+                          className="px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Todo">Todo</option>
+                          <option value="In Progress">In Progress</option>
+                          <option value="Done">Done</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
