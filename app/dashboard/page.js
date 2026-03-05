@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabaseClient'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function Dashboard() {
   const [tasks, setTasks] = useState([])
@@ -139,6 +140,15 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/images/cloudzent.png"
+            alt="CloudZent Technology Services"
+            width={150}
+            height={60}
+            className="object-contain"
+          />
+        </div>
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
           <button
